@@ -412,14 +412,18 @@ class ZipImporter:
                         if isinstance(data, list):
                             for item in data:
                                 if isinstance(item, str):
-                                    urls.append(item)
+                                    if item.startswith(("http://", "https://")):
+                                        urls.append(item)
                                 elif isinstance(item, dict):
                                     url = item.get("url") or item.get("URL") or item.get("href")
-                                    if url:
+                                    if url and url.startswith(("http://", "https://")):
                                         urls.append(url)
                         elif isinstance(data, dict):
                             targets = data.get("targets") or data.get("urls") or []
-                            urls.extend([t if isinstance(t, str) else t.get("url", "") for t in targets])
+                            for t in targets:
+                                u = t if isinstance(t, str) else t.get("url", "")
+                                if u and u.startswith(("http://", "https://")):
+                                    urls.append(u)
 
                 # targets.txt
                 txt_files = [n for n in names if n.endswith(".txt") and "target" in n.lower()]
