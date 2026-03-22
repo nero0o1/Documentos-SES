@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+{% block title %}Análise de Log HAR - WebAuditBot SES{% endblock %}
+
+{% block content %}
+<h1 class="page-title">&#128196; Análise de Log HAR</h1>
+
+<div class="alert alert-info">
+  <strong>&#9432; O que é um arquivo HAR?</strong><br>
+  HAR (HTTP Archive) é um log das requisições feitas pelo navegador. Ele permite analisar
+  tempo de carregamento, erros HTTP, problemas de segurança e muito mais sem precisar acessar o servidor.
+</div>
+
+{% if error %}
+<div class="alert alert-error">&#9888; {{ error }}</div>
+{% endif %}
+
+<div class="form-card">
+  <h2>Como exportar o HAR do navegador</h2>
+  <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:14px;margin-bottom:8px">
+    <div style="background:#f8f9fc;border-radius:8px;padding:14px">
+      <div style="font-weight:700;margin-bottom:6px;color:#003366">&#128215; Chrome / Edge</div>
+      <ol style="font-size:12px;color:#555;padding-left:18px;line-height:1.8">
+        <li>F12 → aba "Network"</li>
+        <li>Navegue pelo site</li>
+        <li>Clique direito → "Save all as HAR"</li>
+      </ol>
+    </div>
+    <div style="background:#f8f9fc;border-radius:8px;padding:14px">
+      <div style="font-weight:700;margin-bottom:6px;color:#003366">&#128031; Firefox</div>
+      <ol style="font-size:12px;color:#555;padding-left:18px;line-height:1.8">
+        <li>F12 → aba "Network"</li>
+        <li>Navegue pelo site</li>
+        <li>Ícone de engrenagem → "Save All As HAR"</li>
+      </ol>
+    </div>
+    <div style="background:#f8f9fc;border-radius:8px;padding:14px">
+      <div style="font-weight:700;margin-bottom:6px;color:#003366">&#127758; Safari</div>
+      <ol style="font-size:12px;color:#555;padding-left:18px;line-height:1.8">
+        <li>Preferências → Avançado → "Show Develop menu"</li>
+        <li>Develop → "Network" → navegue</li>
+        <li>File → "Export HAR"</li>
+      </ol>
+    </div>
+  </div>
+</div>
+
+<form method="POST" enctype="multipart/form-data">
+  <div class="form-card">
+    <h2>&#8679; Enviar arquivo .har</h2>
+    <div class="upload-area" id="uploadArea" onclick="document.getElementById('harFile').click()">
+      <input type="file" id="harFile" name="har_file" accept=".har"
+             onchange="showFileName(this)">
+      <div class="icon">&#128196;</div>
+      <p>Clique para selecionar ou <strong>arraste o arquivo .har aqui</strong></p>
+      <div class="filename" id="fileName"></div>
+    </div>
+  </div>
+
+  <div style="display:flex;gap:12px">
+    <button type="submit" class="btn btn-primary">&#9654; Analisar HAR</button>
+    <a href="{{ url_for('index') }}" class="btn btn-outline">Cancelar</a>
+  </div>
+</form>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function showFileName(input) {
+  var fn = document.getElementById('fileName');
+  if (input.files && input.files[0]) {
+    fn.textContent = '✔ ' + input.files[0].name;
+  }
+}
+var area = document.getElementById('uploadArea');
+area.addEventListener('dragover', function(e) { e.preventDefault(); area.classList.add('drag'); });
+area.addEventListener('dragleave', function() { area.classList.remove('drag'); });
+area.addEventListener('drop', function(e) {
+  e.preventDefault();
+  area.classList.remove('drag');
+  var fi = document.getElementById('harFile');
+  fi.files = e.dataTransfer.files;
+  showFileName(fi);
+});
+</script>
+{% endblock %}

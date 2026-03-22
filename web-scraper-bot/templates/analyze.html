@@ -1,0 +1,107 @@
+{% extends "base.html" %}
+{% block title %}Nova Análise - WebAuditBot SES{% endblock %}
+
+{% block content %}
+<h1 class="page-title">&#43; Nova Análise</h1>
+
+{% if error %}
+<div class="alert alert-error">&#9888; {{ error }}</div>
+{% endif %}
+
+<form method="POST" enctype="multipart/form-data">
+
+  <div class="form-card">
+    <h2>&#127760; URLs para Analisar</h2>
+    <div class="form-row">
+      <label for="urls">Digite as URLs (uma por linha)</label>
+      <textarea id="urls" name="urls" placeholder="https://www.example.com&#10;https://outro-site.gov.br&#10;https://sistema.ses.gov.br">{{ request.form.get('urls', '') }}</textarea>
+      <p class="hint">Aceita URLs com http:// ou https://. Cada linha é tratada como um alvo separado.</p>
+    </div>
+  </div>
+
+  <div class="form-card">
+    <h2>&#128196; Upload de Arquivo</h2>
+    <p style="color:#555;font-size:13px;margin-bottom:16px">
+      Envie um arquivo com lista de alvos ou um relatório HAR de navegador. Formatos suportados:
+    </p>
+
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px">
+      <span style="background:#e8f4fd;color:#0a4070;padding:3px 10px;border-radius:10px;font-size:12px;font-weight:600">.zip</span>
+      <span style="background:#e8f4fd;color:#0a4070;padding:3px 10px;border-radius:10px;font-size:12px;font-weight:600">.xml</span>
+      <span style="background:#e8f4fd;color:#0a4070;padding:3px 10px;border-radius:10px;font-size:12px;font-weight:600">.txt</span>
+      <span style="background:#e8f4fd;color:#0a4070;padding:3px 10px;border-radius:10px;font-size:12px;font-weight:600">.csv</span>
+      <span style="background:#e8f4fd;color:#0a4070;padding:3px 10px;border-radius:10px;font-size:12px;font-weight:600">.json</span>
+    </div>
+
+    <div class="upload-area" id="uploadArea" onclick="document.getElementById('fileInput').click()">
+      <input type="file" id="fileInput" name="file" accept=".zip,.xml,.txt,.csv,.json"
+             onchange="showFileName(this)">
+      <div class="icon">&#128229;</div>
+      <p>Clique para selecionar ou <strong>arraste o arquivo aqui</strong></p>
+      <p>Máximo: 50 MB</p>
+      <div class="filename" id="fileName"></div>
+    </div>
+
+    <div style="margin-top:16px;background:#f8f9fc;border-radius:6px;padding:14px">
+      <p style="font-weight:600;font-size:12px;color:#444;margin-bottom:8px">FORMATOS DE ENTRADA:</p>
+      <table style="font-size:12px;color:#555">
+        <tr>
+          <td style="padding:3px 12px 3px 0"><strong>.zip</strong></td>
+          <td>ZIP exportado contendo targets.json, targets.txt, targets.csv ou targets.xml</td>
+        </tr>
+        <tr>
+          <td style="padding:3px 12px 3px 0"><strong>.xml</strong></td>
+          <td>Arquivo XML com &lt;url&gt; ou &lt;target url="..."&gt;</td>
+        </tr>
+        <tr>
+          <td style="padding:3px 12px 3px 0"><strong>.txt</strong></td>
+          <td>Lista de URLs, uma por linha</td>
+        </tr>
+        <tr>
+          <td style="padding:3px 12px 3px 0"><strong>.csv</strong></td>
+          <td>CSV com coluna "url", "URL" ou "href"</td>
+        </tr>
+        <tr>
+          <td style="padding:3px 12px 3px 0"><strong>.json</strong></td>
+          <td>Array JSON: ["url1","url2"] ou [{"url":"..."},...]</td>
+        </tr>
+      </table>
+    </div>
+  </div>
+
+  <div style="display:flex;gap:12px;align-items:center">
+    <button type="submit" class="btn btn-primary" style="font-size:15px;padding:12px 28px">
+      &#9654; Iniciar Análise
+    </button>
+    <a href="{{ url_for('index') }}" class="btn btn-outline">Cancelar</a>
+  </div>
+
+</form>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function showFileName(input) {
+  var fn = document.getElementById('fileName');
+  if (input.files && input.files[0]) {
+    fn.textContent = '✔ ' + input.files[0].name;
+  }
+}
+
+var area = document.getElementById('uploadArea');
+area.addEventListener('dragover', function(e) {
+  e.preventDefault();
+  area.classList.add('drag');
+});
+area.addEventListener('dragleave', function() {
+  area.classList.remove('drag');
+});
+area.addEventListener('drop', function(e) {
+  e.preventDefault();
+  area.classList.remove('drag');
+  var fi = document.getElementById('fileInput');
+  fi.files = e.dataTransfer.files;
+  showFileName(fi);
+});
+</script>
+{% endblock %}

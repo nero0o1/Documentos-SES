@@ -1,0 +1,156 @@
+{% extends "base.html" %}
+{% block title %}Resultados HAR - WebAuditBot SES{% endblock %}
+
+{% block content %}
+<div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;margin-bottom:18px">
+  <h1 class="page-title" style="margin-bottom:0;border-bottom:none">&#128196; Análise HAR: {{ filename }}</h1>
+  <div style="display:flex;gap:8px">
+    <a href="{{ url_for('har_upload') }}" class="btn btn-primary btn-sm">&#43; Novo HAR</a>
+    <a href="{{ url_for('index') }}" class="btn btn-outline btn-sm">&#8592; Dashboard</a>
+  </div>
+</div>
+
+<!-- Estatísticas -->
+<div class="stats-grid">
+  <div class="stat-card">
+    <div class="num" style="color:#003366">{{ report.total_requests }}</div>
+    <div class="lbl">Requisições</div>
+  </div>
+  <div class="stat-card">
+    <div class="num c-critico">{{ report.errors_4xx + report.errors_5xx }}</div>
+    <div class="lbl">Erros HTTP</div>
+  </div>
+  <div class="stat-card">
+    <div class="num c-alto">{{ report.slow_requests }}</div>
+    <div class="lbl">Lentas (&gt;2s)</div>
+  </div>
+  <div class="stat-card">
+    <div class="num c-medio">{{ report.large_responses }}</div>
+    <div class="lbl">Resp. Grandes</div>
+  </div>
+  <div class="stat-card">
+    <div class="num" style="color:#555">{{ report.errors_4xx }}</div>
+    <div class="lbl">Erros 4xx</div>
+  </div>
+  <div class="stat-card">
+    <div class="num" style="color:#dc3545">{{ report.errors_5xx }}</div>
+    <div class="lbl">Erros 5xx</div>
+  </div>
+  {% if report.total_transfer_kb %}
+  <div class="stat-card">
+    <div class="num" style="color:#555;font-size:20px">{{ report.total_transfer_kb }} KB</div>
+    <div class="lbl">Transferido</div>
+  </div>
+  {% endif %}
+  {% if report.page_load_ms %}
+  <div class="stat-card">
+    <div class="num" style="color:#555;font-size:20px">{{ report.page_load_ms }}ms</div>
+    <div class="lbl">Carga Total</div>
+  </div>
+  {% endif %}
+</div>
+
+<!-- Alertas encontrados -->
+{% if report.issues %}
+<div class="table-wrap">
+  <h2>&#9888; Problemas Detectados ({{ report.issues|length }})</h2>
+  <table>
+    <thead>
+      <tr>
+        <th style="width:80px">Sev.</th>
+        <th>Tipo</th>
+        <th>URL</th>
+        <th>Detalhe</th>
+        <th>Sugestão</th>
+      </tr>
+    </thead>
+    <tbody>
+    {% for issue in report.issues %}
+    <tr>
+      <td><span class="sev sev-{{ issue.severity }}">{{ issue.severity }}</span></td>
+      <td><code style="font-size:11px">{{ issue.type }}</code></td>
+      <td>
+        <span class="truncate" title="{{ issue.url }}">{{ issue.url }}</span>
+      </td>
+      <td>{{ issue.detail }}</td>
+      <td style="color:#555;font-size:12px">{{ issue.suggestion }}</td>
+    </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% else %}
+<div class="alert alert-success">&#10003; Nenhum problema crítico encontrado neste log HAR.</div>
+{% endif %}
+
+<!-- Requisições lentas -->
+{% if report.slow_entries %}
+<div class="table-wrap">
+  <h2>&#128338; Requisições Lentas (&gt;2000ms)</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>URL</th>
+        <th>Método</th>
+        <th>Status</th>
+        <th>Tempo (ms)</th>
+        <th>Tamanho</th>
+      </tr>
+    </thead>
+    <tbody>
+    {% for e in report.slow_entries %}
+    <tr>
+      <td><span class="truncate" title="{{ e.url }}">{{ e.url }}</span></td>
+      <td>{{ e.method }}</td>
+      <td><span style="font-weight:600;color:{% if e.status >= 400 %}#dc3545{% else %}#28a745{% endif %}">{{ e.status }}</span></td>
+      <td><span style="color:#dc3545;font-weight:700">{{ e.time_ms }}</span></td>
+      <td>{{ e.size_kb }} KB</td>
+    </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endif %}
+
+<!-- Todas as requisições -->
+<div class="table-wrap">
+  <h2>&#128203; Todas as Requisições</h2>
+  <div style="padding:8px 18px;font-size:12px;color:#888">
+    Mostrando até 200 primeiras requisições
+  </div>
+  <table>
+    <thead>
+      <tr>
+        <th>#</th>
+        <th>URL</th>
+        <th>Método</th>
+        <th>Status</th>
+        <th>Tipo</th>
+        <th>Tempo (ms)</th>
+        <th>Tamanho</th>
+      </tr>
+    </thead>
+    <tbody>
+    {% for e in report.entries[:200] %}
+    <tr>
+      <td style="color:#999">{{ loop.index }}</td>
+      <td><span class="truncate" title="{{ e.url }}">{{ e.url }}</span></td>
+      <td>{{ e.method }}</td>
+      <td>
+        <span style="font-weight:600;color:{% if e.status >= 500 %}#dc3545{% elif e.status >= 400 %}#fd7e14{% elif e.status >= 300 %}#ffc107{% else %}#28a745{% endif %}">
+          {{ e.status }}
+        </span>
+      </td>
+      <td style="font-size:11px;color:#666">{{ e.mime_type }}</td>
+      <td>
+        <span style="color:{% if e.time_ms > 2000 %}#dc3545{% elif e.time_ms > 1000 %}#fd7e14{% else %}#333{% endif %}">
+          {{ e.time_ms }}
+        </span>
+      </td>
+      <td>{{ e.size_kb }} KB</td>
+    </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

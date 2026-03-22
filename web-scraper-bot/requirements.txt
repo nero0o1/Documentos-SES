@@ -1,6 +1,9 @@
 # WebAuditBot SES - Dependências
 # Instale com: pip install -r requirements.txt
 
+# Interface Web
+flask>=2.3.0
+
 # HTTP e Web Scraping
 requests>=2.31.0
 beautifulsoup4>=4.12.0

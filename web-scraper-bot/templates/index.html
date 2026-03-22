@@ -1,0 +1,83 @@
+{% extends "base.html" %}
+{% block title %}Dashboard - WebAuditBot SES{% endblock %}
+
+{% block content %}
+<h1 class="page-title">&#128202; Dashboard</h1>
+
+{% if not sessions %}
+<div class="form-card" style="text-align:center;padding:48px 24px">
+  <div style="font-size:56px;margin-bottom:16px">&#128270;</div>
+  <h2 style="color:#555;font-weight:400;margin-bottom:12px">Nenhuma análise realizada ainda</h2>
+  <p style="color:#888;margin-bottom:24px">Inicie uma nova análise para verificar problemas em seus sites.</p>
+  <a href="{{ url_for('analyze') }}" class="btn btn-primary">&#43; Nova Análise</a>
+</div>
+{% else %}
+
+<div style="display:flex;gap:10px;margin-bottom:20px;flex-wrap:wrap">
+  <a href="{{ url_for('analyze') }}" class="btn btn-primary">&#43; Nova Análise</a>
+  <a href="{{ url_for('har_upload') }}" class="btn btn-outline">&#128196; Analisar HAR</a>
+</div>
+
+<div class="table-wrap">
+  <h2>Sessões Recentes ({{ sessions|length }})</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>ID da Sessão</th>
+        <th>Status</th>
+        <th>Alvos</th>
+        <th>Páginas</th>
+        <th>Falhas</th>
+        <th>Ações</th>
+      </tr>
+    </thead>
+    <tbody>
+    {% for s in sessions %}
+    <tr>
+      <td><code style="font-size:11px">{{ s.id }}</code></td>
+      <td>
+        <span class="status-badge status-{{ s.status }}">
+          {% if s.status == 'done' %}&#10003; Concluído
+          {% elif s.status == 'running' %}&#9654; Rodando
+          {% elif s.status == 'error' %}&#10007; Erro
+          {% elif s.status == 'starting' %}&#8635; Iniciando
+          {% else %}{{ s.status }}{% endif %}
+        </span>
+      </td>
+      <td>
+        {% if s.targets %}
+          <span class="truncate" title="{{ s.targets|join(', ') }}">
+            {{ s.targets[0] }}{% if s.targets|length > 1 %} +{{ s.targets|length - 1 }}{% endif %}
+          </span>
+        {% else %}<span style="color:#999">—</span>{% endif %}
+      </td>
+      <td>{{ s.summary.get('total_pages', '—') }}</td>
+      <td>
+        {% set fc = s.summary.get('total_failures', 0) %}
+        {% if fc > 0 %}
+          <span style="color:#dc3545;font-weight:700">{{ fc }}</span>
+        {% else %}
+          {{ fc or '—' }}
+        {% endif %}
+      </td>
+      <td>
+        <div style="display:flex;gap:6px;flex-wrap:wrap">
+          {% if s.status in ('running', 'starting') %}
+            <a href="{{ url_for('progress_page', session_id=s.id) }}" class="btn btn-outline btn-sm">&#128250; Progresso</a>
+          {% elif s.status == 'done' %}
+            <a href="{{ url_for('results', session_id=s.id) }}" class="btn btn-primary btn-sm">&#128202; Resultados</a>
+            {% if s.zip_path %}
+              <a href="{{ url_for('download', session_id=s.id) }}" class="btn btn-success btn-sm">&#8595; ZIP</a>
+            {% endif %}
+          {% elif s.status == 'error' %}
+            <a href="{{ url_for('progress_page', session_id=s.id) }}" class="btn btn-danger btn-sm">&#128683; Ver Erro</a>
+          {% endif %}
+        </div>
+      </td>
+    </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endif %}
+{% endblock %}
