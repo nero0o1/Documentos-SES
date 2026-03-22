@@ -65,10 +65,15 @@ class ZipExporter:
             zf.writestr(f"reports/relatorio_{session_id}.json", json_bytes)
             manifest["contents"].append("reports/relatorio_<session_id>.json")
 
-            # 2. Relatório HTML
+            # 2a. Relatório HTML moderno (CSS Grid - browsers >= 2015)
             html_report = self._build_html_report(session_id, pages, failures, summary)
             zf.writestr(f"reports/relatorio_{session_id}.html", html_report.encode("utf-8"))
             manifest["contents"].append("reports/relatorio_<session_id>.html")
+
+            # 2b. Relatório HTML legado (tabelas puras - compatível com qualquer browser)
+            html_legacy = self._build_html_report_legacy(session_id, pages, failures, summary)
+            zf.writestr(f"reports/relatorio_legado_{session_id}.html", html_legacy.encode("utf-8"))
+            manifest["contents"].append("reports/relatorio_legado_<session_id>.html")
 
             # 3. CSV de falhas
             csv_bytes = self._build_failures_csv(failures)
@@ -295,6 +300,168 @@ class ZipExporter:
     <p>WebAuditBot SES v1.0 | Sistema de Auditoria de Saúde Digital</p>
   </footer>
 </div>
+</body>
+</html>"""
+
+    def _build_html_report_legacy(
+        self,
+        session_id: str,
+        pages: List[Dict],
+        failures: List[Dict],
+        summary: Optional[Dict]
+    ) -> str:
+        """
+        Relatório HTML usando apenas tabelas e atributos inline.
+        Compatível com qualquer navegador, incluindo IE5, Netscape 4 e browsers antigos.
+        Sem CSS externo, sem Grid, sem Flexbox, sem JavaScript.
+        """
+        now = datetime.now(timezone.utc).strftime("%d/%m/%Y %H:%M:%S UTC")
+        total_pages    = len(pages)
+        total_failures = len(failures)
+        critical = sum(1 for f in failures if f.get("severity") == "CRITICAL")
+        high     = sum(1 for f in failures if f.get("severity") == "HIGH")
+        medium   = sum(1 for f in failures if f.get("severity") == "MEDIUM")
+        low      = sum(1 for f in failures if f.get("severity") == "LOW")
+
+        sev_color = {
+            "CRITICAL": "#CC0000",
+            "HIGH":     "#CC6600",
+            "MEDIUM":   "#999900",
+            "LOW":      "#006600",
+        }
+
+        # Linhas de falhas
+        failure_rows = ""
+        for f in failures:
+            sev   = f.get("severity", "LOW")
+            color = sev_color.get(sev, "#000000")
+            url   = f.get("url", "")[:100]
+            desc  = f.get("description", "")
+            sug   = f.get("suggestion", "")
+            cat   = f.get("category", "")
+            etype = f.get("error_type", "")
+            title = f.get("page_title") or ""
+            failure_rows += (
+                f'<tr>'
+                f'<td bgcolor="#F5F5F5"><font color="{color}"><b>{sev}</b></font></td>'
+                f'<td bgcolor="#F5F5F5">{cat}</td>'
+                f'<td bgcolor="#F5F5F5">{etype}</td>'
+                f'<td bgcolor="#F5F5F5">{url}</td>'
+                f'<td bgcolor="#F5F5F5">{title}</td>'
+                f'<td bgcolor="#F5F5F5">{desc}</td>'
+                f'<td bgcolor="#FFFFF0">{sug}</td>'
+                f'</tr>\n'
+            )
+
+        # Linhas de páginas
+        page_rows = ""
+        for p in pages:
+            status = p.get("status_code", 0)
+            sc = "#006600" if 200 <= status < 300 else "#CC0000"
+            page_rows += (
+                f'<tr>'
+                f'<td bgcolor="#F5F5F5">{p.get("url","")[:80]}</td>'
+                f'<td bgcolor="#F5F5F5"><font color="{sc}"><b>{status}</b></font></td>'
+                f'<td bgcolor="#F5F5F5">{p.get("response_time_ms",0):.0f}ms</td>'
+                f'<td bgcolor="#F5F5F5">{p.get("html_size_kb",0):.1f}KB</td>'
+                f'<td bgcolor="#F5F5F5">{p.get("page_title","") or ""}</td>'
+                f'<td bgcolor="#F5F5F5">{p.get("errors_found",0)}</td>'
+                f'<td bgcolor="#F5F5F5">{p.get("warnings_found",0)}</td>'
+                f'</tr>\n'
+            )
+
+        return f"""<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+  "http://www.w3.org/TR/html4/loose.dtd">
+<html lang="pt-BR">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<title>Relatorio de Auditoria Web - {session_id}</title>
+</head>
+<body bgcolor="#FFFFFF" text="#000000" link="#0000CC" vlink="#551A8B">
+
+<table width="100%" cellpadding="8" cellspacing="0" border="0" bgcolor="#003366">
+<tr>
+  <td>
+    <font color="#FFFFFF" size="5"><b>Relatorio de Auditoria Web - SES</b></font><br>
+    <font color="#CCCCCC" size="2">Sessao: {session_id} | Gerado em: {now}</font>
+  </td>
+</tr>
+</table>
+
+<br>
+
+<table width="100%" cellpadding="6" cellspacing="4" border="0">
+<tr>
+  <td width="16%" align="center" bgcolor="#DDDDDD">
+    <font size="4"><b>{total_pages}</b></font><br>
+    <font size="2">Paginas Analisadas</font>
+  </td>
+  <td width="16%" align="center" bgcolor="#DDDDDD">
+    <font size="4"><b>{total_failures}</b></font><br>
+    <font size="2">Total de Falhas</font>
+  </td>
+  <td width="16%" align="center" bgcolor="#FFCCCC">
+    <font size="4" color="#CC0000"><b>{critical}</b></font><br>
+    <font size="2">Criticas</font>
+  </td>
+  <td width="16%" align="center" bgcolor="#FFE5CC">
+    <font size="4" color="#CC6600"><b>{high}</b></font><br>
+    <font size="2">Altas</font>
+  </td>
+  <td width="16%" align="center" bgcolor="#FFFFE0">
+    <font size="4" color="#999900"><b>{medium}</b></font><br>
+    <font size="2">Medias</font>
+  </td>
+  <td width="16%" align="center" bgcolor="#CCFFCC">
+    <font size="4" color="#006600"><b>{low}</b></font><br>
+    <font size="2">Baixas</font>
+  </td>
+</tr>
+</table>
+
+<br>
+<hr>
+<font size="4"><b>Falhas Detectadas ({total_failures})</b></font>
+<br><br>
+
+<table width="100%" cellpadding="4" cellspacing="1" border="1" bordercolor="#CCCCCC">
+<tr bgcolor="#003366">
+  <td><font color="#FFFFFF"><b>Severidade</b></font></td>
+  <td><font color="#FFFFFF"><b>Categoria</b></font></td>
+  <td><font color="#FFFFFF"><b>Tipo</b></font></td>
+  <td><font color="#FFFFFF"><b>URL</b></font></td>
+  <td><font color="#FFFFFF"><b>Titulo da Pagina</b></font></td>
+  <td><font color="#FFFFFF"><b>Descricao</b></font></td>
+  <td><font color="#FFFFFF"><b>Sugestao de Correcao</b></font></td>
+</tr>
+{failure_rows if failure_rows else '<tr><td colspan="7" align="center"><i>Nenhuma falha detectada</i></td></tr>'}
+</table>
+
+<br>
+<hr>
+<font size="4"><b>Paginas Auditadas ({total_pages})</b></font>
+<br><br>
+
+<table width="100%" cellpadding="4" cellspacing="1" border="1" bordercolor="#CCCCCC">
+<tr bgcolor="#003366">
+  <td><font color="#FFFFFF"><b>URL</b></font></td>
+  <td><font color="#FFFFFF"><b>Status HTTP</b></font></td>
+  <td><font color="#FFFFFF"><b>Tempo</b></font></td>
+  <td><font color="#FFFFFF"><b>Tamanho</b></font></td>
+  <td><font color="#FFFFFF"><b>Titulo</b></font></td>
+  <td><font color="#FFFFFF"><b>Erros</b></font></td>
+  <td><font color="#FFFFFF"><b>Alertas</b></font></td>
+</tr>
+{page_rows if page_rows else '<tr><td colspan="7" align="center"><i>Nenhuma pagina auditada</i></td></tr>'}
+</table>
+
+<br>
+<hr>
+<font size="1" color="#666666">
+  WebAuditBot SES v1.0 - Sistema de Auditoria de Saude Digital<br>
+  Relatorio legado - compativel com qualquer navegador (HTML 4.01)
+</font>
+
 </body>
 </html>"""
 

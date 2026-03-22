@@ -240,8 +240,8 @@ class TestZipExport(unittest.TestCase):
         self.assertGreater(zip_path.stat().st_size, 0, "ZIP não deve estar vazio")
 
     # ── T36 ──────────────────────────────────────────────────────────────────
-    def test_T36_zip_contem_relatorio_html(self):
-        """ZIP exportado deve conter relatório HTML."""
+    def test_T36_zip_contem_relatorio_html_moderno_e_legado(self):
+        """ZIP exportado deve conter relatório HTML moderno e versão legada."""
         zip_path = self.exporter.export_session(
             session_id="TEST-EXPORT-002",
             pages=[], failures=[], audit_records=[], summary={}
@@ -249,7 +249,11 @@ class TestZipExport(unittest.TestCase):
         with zipfile.ZipFile(zip_path, "r") as zf:
             names = zf.namelist()
         html_files = [n for n in names if n.endswith(".html")]
-        self.assertTrue(len(html_files) > 0, "ZIP deve conter ao menos um .html")
+        self.assertGreaterEqual(len(html_files), 2, "ZIP deve conter ao menos 2 .html (moderno + legado)")
+        moderno = [n for n in html_files if "legado" not in n]
+        legado  = [n for n in html_files if "legado" in n]
+        self.assertTrue(len(moderno) > 0, "Deve ter relatorio.html moderno")
+        self.assertTrue(len(legado) > 0, "Deve ter relatorio_legado.html")
 
     # ── T37 ──────────────────────────────────────────────────────────────────
     def test_T37_zip_contem_csv_de_falhas(self):
@@ -307,3 +311,37 @@ class TestZipExport(unittest.TestCase):
         with zipfile.ZipFile(zip_path, "r") as zf:
             snap_files = [n for n in zf.namelist() if n.startswith("snapshots/")]
         self.assertEqual(len(snap_files), 1, "Deve conter 1 snapshot HTML")
+
+    # ── T41 ──────────────────────────────────────────────────────────────────
+    def test_T41_relatorio_legado_usa_html_401_sem_css_moderno(self):
+        """Relatório legado deve usar DOCTYPE HTML 4.01 e não conter CSS moderno."""
+        failures = [
+            {"url": "http://a.com", "error_type": "HTTP_500", "error_code": "500",
+             "description": "Erro 500", "suggestion": "Corrija o servidor",
+             "severity": "CRITICAL", "category": "SERVER",
+             "page_title": "Teste", "element": None, "extra": {}},
+        ]
+        pages = [{"url": "http://a.com", "status_code": 200, "response_time_ms": 100,
+                  "html_size_kb": 5, "page_title": "Teste", "errors_found": 1,
+                  "warnings_found": 0, "timestamp": "2024-01-01T00:00:00Z"}]
+        zip_path = self.exporter.export_session(
+            session_id="TEST-EXPORT-007",
+            pages=pages, failures=failures, audit_records=[], summary={}
+        )
+        with zipfile.ZipFile(zip_path, "r") as zf:
+            legado_files = [n for n in zf.namelist() if "legado" in n and n.endswith(".html")]
+            self.assertTrue(len(legado_files) > 0, "ZIP deve conter relatorio_legado.html")
+            content = zf.read(legado_files[0]).decode("utf-8")
+
+        # Verifica HTML 4.01 Transitional
+        self.assertIn("HTML 4.01 Transitional", content, "Deve usar DOCTYPE HTML 4.01")
+        # Não deve conter propriedades CSS Grid ou Flexbox
+        self.assertNotIn("display: grid", content, "Nao deve usar CSS Grid")
+        self.assertNotIn("display:grid", content, "Nao deve usar CSS Grid")
+        self.assertNotIn("flexbox", content, "Nao deve usar Flexbox")
+        # Deve conter dados das falhas
+        self.assertIn("CRITICAL", content, "Deve mostrar severidade CRITICAL")
+        self.assertIn("Corrija o servidor", content, "Deve mostrar sugestao de correcao")
+        # Deve usar tabelas e bgcolor (compatibilidade antiga)
+        self.assertIn("bgcolor=", content, "Deve usar bgcolor para compatibilidade")
+        self.assertIn("<table", content, "Deve usar <table> para layout")
