@@ -1,0 +1,175 @@
+{% extends "base.html" %}
+{% block title %}Progresso - WebAuditBot SES{% endblock %}
+
+{% block content %}
+<h1 class="page-title">&#9654; Análise em Progresso</h1>
+
+<div class="form-card">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+    <div>
+      <span style="font-size:12px;color:#888">Sessão:</span>
+      <code style="font-size:12px">{{ session_id }}</code>
+    </div>
+    <span id="statusBadge" class="status-badge status-starting">&#8635; Iniciando...</span>
+  </div>
+
+  {% if targets %}
+  <div style="margin-bottom:12px">
+    <span style="font-size:12px;color:#888">Alvos:</span>
+    {% for t in targets[:3] %}
+      <span style="font-size:12px;background:#eef2f7;padding:2px 8px;border-radius:10px;margin-left:4px">{{ t }}</span>
+    {% endfor %}
+    {% if targets|length > 3 %}
+      <span style="font-size:12px;color:#888">+{{ targets|length - 3 }} mais</span>
+    {% endif %}
+  </div>
+  {% endif %}
+
+  <div class="progress-wrap">
+    <div class="progress-bar" id="progressBar" style="width:0%"></div>
+  </div>
+
+  <div style="display:flex;gap:24px;margin-top:12px;flex-wrap:wrap">
+    <div style="text-align:center">
+      <div style="font-size:24px;font-weight:800;color:#003366" id="cntPages">0</div>
+      <div style="font-size:11px;color:#888">Páginas</div>
+    </div>
+    <div style="text-align:center">
+      <div style="font-size:24px;font-weight:800;color:#dc3545" id="cntErrors">0</div>
+      <div style="font-size:11px;color:#888">Erros</div>
+    </div>
+    <div style="text-align:center">
+      <div style="font-size:24px;font-weight:800;color:#fd7e14" id="cntWarnings">0</div>
+      <div style="font-size:11px;color:#888">Avisos</div>
+    </div>
+  </div>
+</div>
+
+<div class="form-card">
+  <h2 style="margin-bottom:8px">&#128196; Log ao Vivo</h2>
+  <div class="live-log" id="liveLog">
+    <span class="log-info">&#9654; Conectando ao servidor de análise...</span>
+  </div>
+</div>
+
+<div id="doneSection" style="display:none">
+  <div class="alert alert-success">
+    &#10003; <strong>Análise concluída!</strong> Verifique os resultados abaixo.
+  </div>
+  <div style="display:flex;gap:12px">
+    <a id="btnResults" href="#" class="btn btn-primary">&#128202; Ver Resultados</a>
+    <a id="btnDownload" href="#" class="btn btn-success" style="display:none">&#8595; Baixar ZIP</a>
+    <a href="{{ url_for('index') }}" class="btn btn-outline">&#8592; Dashboard</a>
+  </div>
+</div>
+
+<div id="errorSection" style="display:none">
+  <div class="alert alert-error" id="errorMsg">&#9888; Erro durante a análise.</div>
+  <a href="{{ url_for('index') }}" class="btn btn-outline">&#8592; Voltar ao Dashboard</a>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+var sessionId = "{{ session_id }}";
+var logEl = document.getElementById('liveLog');
+var pages = 0, errors = 0, warnings = 0;
+
+function addLog(msg, cls) {
+  var line = document.createElement('div');
+  line.className = cls || '';
+  line.textContent = msg;
+  logEl.appendChild(line);
+  logEl.scrollTop = logEl.scrollHeight;
+}
+
+function setStatus(text, cls) {
+  var b = document.getElementById('statusBadge');
+  b.textContent = text;
+  b.className = 'status-badge ' + cls;
+}
+
+var es = new EventSource('/stream/' + sessionId);
+
+es.addEventListener('start', function(e) {
+  var d = JSON.parse(e.data);
+  setStatus('▶ Rodando', 'status-running');
+  addLog('▶ ' + (d.message || 'Análise iniciada'), 'log-info');
+  document.getElementById('progressBar').style.width = '5%';
+});
+
+es.addEventListener('page', function(e) {
+  var d = JSON.parse(e.data);
+  pages++;
+  errors   += d.errors   || 0;
+  warnings += d.warnings || 0;
+  document.getElementById('cntPages').textContent   = pages;
+  document.getElementById('cntErrors').textContent  = errors;
+  document.getElementById('cntWarnings').textContent = warnings;
+
+  var st = d.status || '?';
+  var cls = st >= 400 ? 'log-err' : (d.errors > 0 ? 'log-warn' : 'log-ok');
+  var title = d.title ? ' [' + d.title.substring(0, 30) + ']' : '';
+  addLog('[' + st + '] ' + d.url + title + '  ' + d.time_ms + 'ms  erros:' + (d.errors||0), cls);
+
+  var pct = Math.min(5 + pages * 3, 90);
+  document.getElementById('progressBar').style.width = pct + '%';
+});
+
+es.addEventListener('done', function(e) {
+  var d = JSON.parse(e.data);
+  setStatus('✔ Concluído', 'status-done');
+  document.getElementById('progressBar').style.width = '100%';
+  addLog('✔ Análise concluída. Páginas: ' + (d.total_pages||pages) +
+         ' | Falhas: ' + (d.total_failures||0) +
+         ' | Tempo: ' + (d.elapsed_seconds ? d.elapsed_seconds.toFixed(1)+'s' : ''), 'log-ok');
+
+  document.getElementById('btnResults').href = '/results/' + sessionId;
+  var dlBtn = document.getElementById('btnDownload');
+  if (d.zip_export) {
+    dlBtn.href = '/download/' + sessionId;
+    dlBtn.style.display = 'inline-flex';
+  }
+  document.getElementById('doneSection').style.display = 'block';
+  es.close();
+});
+
+es.addEventListener('error', function(e) {
+  var d = {};
+  try { d = JSON.parse(e.data); } catch(ex) {}
+  setStatus('✘ Erro', 'status-error');
+  addLog('✘ Erro: ' + (d.message || 'Falha desconhecida'), 'log-err');
+  document.getElementById('errorMsg').textContent = '⚠ Erro: ' + (d.message || 'Falha na análise.');
+  document.getElementById('errorSection').style.display = 'block';
+  es.close();
+});
+
+es.addEventListener('close', function(e) {
+  es.close();
+});
+
+es.onerror = function() {
+  addLog('⚠ Conexão interrompida. Verificando status...', 'log-warn');
+  setTimeout(function() {
+    fetch('/api/status/' + sessionId)
+      .then(function(r) { return r.json(); })
+      .then(function(d) {
+        if (d.status === 'done') {
+          setStatus('✔ Concluído', 'status-done');
+          document.getElementById('progressBar').style.width = '100%';
+          document.getElementById('btnResults').href = '/results/' + sessionId;
+          if (d.zip_available) {
+            var dlBtn = document.getElementById('btnDownload');
+            dlBtn.href = '/download/' + sessionId;
+            dlBtn.style.display = 'inline-flex';
+          }
+          document.getElementById('doneSection').style.display = 'block';
+        } else if (d.status === 'error') {
+          setStatus('✘ Erro', 'status-error');
+          document.getElementById('errorSection').style.display = 'block';
+        }
+      }).catch(function() {});
+  }, 2000);
+};
+</script>
+{% endblock %}

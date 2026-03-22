@@ -1,0 +1,16 @@
+# WebAuditBot SES - Dependências
+# Instale com: pip install -r requirements.txt
+
+# Interface Web
+flask>=2.3.0
+
+# HTTP e Web Scraping
+requests>=2.31.0
+beautifulsoup4>=4.12.0
+lxml>=4.9.0
+
+# Oracle Database (opcional - instale apenas se usar Oracle)
+# oracledb>=2.0.0
+
+# Utilitários (já inclusos no Python 3.x stdlib)
+# zipfile, json, csv, logging, pathlib, hashlib, uuid, re, io, time, datetime

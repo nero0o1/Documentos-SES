@@ -1,0 +1,168 @@
+{% extends "base.html" %}
+{% block title %}Resultados - WebAuditBot SES{% endblock %}
+
+{% block content %}
+<div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;margin-bottom:18px">
+  <h1 class="page-title" style="margin-bottom:0;border-bottom:none">&#128202; Resultados da Análise</h1>
+  <div style="display:flex;gap:8px;flex-wrap:wrap">
+    {% if zip_available %}
+    <a href="{{ url_for('download', session_id=session_id) }}" class="btn btn-success btn-sm">&#8595; Baixar ZIP</a>
+    {% endif %}
+    <a href="{{ url_for('analyze') }}" class="btn btn-primary btn-sm">&#43; Nova Análise</a>
+    <a href="{{ url_for('index') }}" class="btn btn-outline btn-sm">&#8592; Dashboard</a>
+  </div>
+</div>
+
+<div style="font-size:12px;color:#888;margin-bottom:16px">
+  Sessão: <code>{{ session_id }}</code>
+</div>
+
+<!-- Cards de estatísticas -->
+{% set critical = summary.get('by_severity', {}).get('CRITICAL', 0) %}
+{% set high     = summary.get('by_severity', {}).get('HIGH', 0) %}
+{% set medium   = summary.get('by_severity', {}).get('MEDIUM', 0) %}
+{% set low      = summary.get('by_severity', {}).get('LOW', 0) %}
+
+<div class="stats-grid">
+  <div class="stat-card">
+    <div class="num" style="color:#003366">{{ summary.get('total_pages', 0) }}</div>
+    <div class="lbl">Páginas</div>
+  </div>
+  <div class="stat-card">
+    <div class="num" style="color:#555">{{ summary.get('total_failures', 0) }}</div>
+    <div class="lbl">Total Falhas</div>
+  </div>
+  <div class="stat-card">
+    <div class="num c-critico">{{ critical }}</div>
+    <div class="lbl">Crítico</div>
+  </div>
+  <div class="stat-card">
+    <div class="num c-alto">{{ high }}</div>
+    <div class="lbl">Alto</div>
+  </div>
+  <div class="stat-card">
+    <div class="num c-medio">{{ medium }}</div>
+    <div class="lbl">Médio</div>
+  </div>
+  <div class="stat-card">
+    <div class="num c-baixo">{{ low }}</div>
+    <div class="lbl">Baixo</div>
+  </div>
+  {% if summary.get('elapsed_seconds') %}
+  <div class="stat-card">
+    <div class="num" style="color:#555;font-size:22px">{{ "%.1f"|format(summary.elapsed_seconds) }}s</div>
+    <div class="lbl">Tempo Total</div>
+  </div>
+  {% endif %}
+</div>
+
+<!-- Falhas por Categoria -->
+{% if by_category %}
+<div class="table-wrap" style="margin-bottom:24px">
+  <h2>&#127991; Falhas por Categoria</h2>
+  <div style="padding:14px 18px">
+    {% for cat, cat_failures in by_category.items()|sort %}
+    <div class="cat-section">
+      <div class="cat-header" onclick="toggleCat('cat-{{ loop.index }}')">
+        <span>{{ cat }}</span>
+        <span class="cat-count">{{ cat_failures|length }}</span>
+      </div>
+      <div id="cat-{{ loop.index }}">
+        <table>
+          <thead>
+            <tr>
+              <th style="width:80px">Sev.</th>
+              <th>Tipo</th>
+              <th>URL</th>
+              <th>Descrição</th>
+              <th>Sugestão</th>
+            </tr>
+          </thead>
+          <tbody>
+          {% for f in cat_failures %}
+          <tr>
+            <td>
+              <span class="sev sev-{{ f.get('severity','?') }}">{{ f.get('severity','?') }}</span>
+            </td>
+            <td><code style="font-size:11px">{{ f.get('error_type','?') }}</code></td>
+            <td>
+              <a href="{{ f.get('url','') }}" target="_blank" rel="noopener" class="truncate"
+                 title="{{ f.get('url','') }}">{{ f.get('url','?') }}</a>
+            </td>
+            <td>{{ f.get('description','') }}</td>
+            <td style="color:#555;font-size:12px">{{ f.get('suggestion','') }}</td>
+          </tr>
+          {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+{% endif %}
+
+<!-- Páginas analisadas -->
+{% if pages %}
+<div class="table-wrap">
+  <h2>&#128196; Páginas Analisadas ({{ pages|length }})</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>URL</th>
+        <th>Status</th>
+        <th>Tempo (ms)</th>
+        <th>Tamanho</th>
+        <th>Erros</th>
+        <th>Avisos</th>
+      </tr>
+    </thead>
+    <tbody>
+    {% for p in pages %}
+    <tr>
+      <td>
+        <a href="{{ p.get('url','') }}" target="_blank" rel="noopener" class="truncate"
+           title="{{ p.get('url','') }}">{{ p.get('url','?') }}</a>
+      </td>
+      <td>
+        {% set sc = p.get('status_code', 0) %}
+        <span style="font-weight:600;color:{% if sc >= 500 %}#dc3545{% elif sc >= 400 %}#fd7e14{% else %}#28a745{% endif %}">
+          {{ sc }}
+        </span>
+      </td>
+      <td>
+        {% set ms = p.get('response_time_ms', 0) %}
+        <span style="color:{% if ms > 3000 %}#dc3545{% elif ms > 1000 %}#fd7e14{% else %}#333{% endif %}">
+          {{ ms }}
+        </span>
+      </td>
+      <td>
+        {% set sz = p.get('html_size_bytes', 0) %}
+        {{ (sz / 1024)|round(1) }} KB
+      </td>
+      <td>
+        {% if p.get('errors_found', 0) > 0 %}
+          <span style="color:#dc3545;font-weight:700">{{ p.errors_found }}</span>
+        {% else %}0{% endif %}
+      </td>
+      <td>{{ p.get('warnings_found', 0) }}</td>
+    </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endif %}
+
+{% if not failures and not pages %}
+<div class="alert alert-info">&#9432; Nenhuma falha encontrada. O site está dentro dos padrões verificados!</div>
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+<script>
+function toggleCat(id) {
+  var el = document.getElementById(id);
+  el.style.display = el.style.display === 'none' ? '' : 'none';
+}
+</script>
+{% endblock %}

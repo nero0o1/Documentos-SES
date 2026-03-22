@@ -1,0 +1,70 @@
+{
+  "scraper": {
+    "timeout": 30,
+    "max_retries": 3,
+    "retry_delay": 2,
+    "user_agent": "WebAuditBot/1.0 (Sistema de Auditoria SES)",
+    "follow_redirects": true,
+    "verify_ssl": true,
+    "max_depth": 3,
+    "max_pages": 100,
+    "delay_between_requests": 1.0,
+    "headers": {
+      "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+      "Accept-Language": "pt-BR,pt;q=0.9,en;q=0.8",
+      "Accept-Encoding": "gzip, deflate"
+    },
+    "javascript_rendering": false,
+    "screenshot_on_error": false
+  },
+  "analysis": {
+    "check_broken_links": true,
+    "check_missing_alt": true,
+    "check_empty_forms": true,
+    "check_http_errors": true,
+    "check_slow_pages": true,
+    "slow_page_threshold_ms": 3000,
+    "check_missing_meta": true,
+    "check_accessibility": true,
+    "check_security_headers": true,
+    "check_mixed_content": true,
+    "check_large_resources": true,
+    "large_resource_threshold_kb": 500
+  },
+  "logging": {
+    "level": "INFO",
+    "log_dir": "logs",
+    "audit_log_enabled": true,
+    "failure_log_enabled": true,
+    "log_rotation": true,
+    "max_log_size_mb": 10,
+    "backup_count": 5,
+    "log_format": "json",
+    "include_stack_traces": true
+  },
+  "oracle": {
+    "enabled": false,
+    "host": "localhost",
+    "port": 1521,
+    "service_name": "ORCL",
+    "username": "ses_user",
+    "password": "",
+    "pool_min": 2,
+    "pool_max": 10,
+    "pool_increment": 1,
+    "table_prefix": "WEB_AUDIT",
+    "auto_create_tables": true,
+    "batch_insert_size": 100
+  },
+  "export": {
+    "output_dir": "exports",
+    "import_dir": "imports",
+    "report_dir": "reports",
+    "zip_compression_level": 6,
+    "include_html_snapshots": true,
+    "include_screenshots": false,
+    "report_formats": ["json", "html", "csv"],
+    "auto_export_on_complete": true
+  },
+  "targets": []
+}

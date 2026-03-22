@@ -1,0 +1,100 @@
+/* WebAuditBot SES - Estilos */
+:root{--azul:#003366;--azul2:#0055a5;--verde:#28a745;--vermelho:#dc3545;--laranja:#fd7e14;--amarelo:#ffc107;--cinza:#6c757d;--bg:#f4f6fb;--card:#fff;--border:#dee2e6}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:var(--bg);color:#333;line-height:1.5;font-size:14px}
+a{color:var(--azul2);text-decoration:none}a:hover{text-decoration:underline}
+
+/* Header */
+.header{background:var(--azul);color:#fff;padding:14px 24px;display:flex;align-items:center;gap:16px;box-shadow:0 2px 6px rgba(0,0,0,.3)}
+.header h1{font-size:20px;font-weight:700;letter-spacing:-.3px}
+.header nav{margin-left:auto;display:flex;gap:8px}
+.header nav a{color:#cce0ff;font-size:13px;padding:5px 12px;border-radius:4px;border:1px solid rgba(255,255,255,.2)}
+.header nav a:hover{background:rgba(255,255,255,.15);text-decoration:none}
+.badge-ses{background:#0099cc;font-size:11px;padding:2px 7px;border-radius:10px;font-weight:600}
+
+/* Layout */
+.container{max-width:1300px;margin:0 auto;padding:20px}
+.page-title{font-size:22px;font-weight:700;color:var(--azul);margin-bottom:18px;padding-bottom:10px;border-bottom:2px solid var(--azul)}
+
+/* Cards de estatísticas */
+.stats-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:14px;margin-bottom:24px}
+.stat-card{background:var(--card);border-radius:10px;padding:16px;text-align:center;box-shadow:0 1px 4px rgba(0,0,0,.08);border:1px solid var(--border)}
+.stat-card .num{font-size:34px;font-weight:800;line-height:1}
+.stat-card .lbl{font-size:12px;color:var(--cinza);margin-top:4px}
+.c-critico{color:var(--vermelho)}.c-alto{color:var(--laranja)}.c-medio{color:var(--amarelo)}.c-baixo{color:var(--verde)}.c-info{color:var(--azul2)}
+
+/* Tabelas */
+.table-wrap{background:var(--card);border-radius:10px;box-shadow:0 1px 4px rgba(0,0,0,.08);overflow:hidden;margin-bottom:24px}
+.table-wrap h2{padding:14px 18px;font-size:15px;font-weight:700;color:var(--azul);border-bottom:1px solid var(--border);background:#f8f9fc}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{background:var(--azul);color:#fff;padding:9px 12px;text-align:left;font-weight:600;white-space:nowrap}
+td{padding:8px 12px;border-bottom:1px solid #f0f0f0;vertical-align:top;max-width:400px}
+tr:hover{background:#f5f8ff}
+.truncate{max-width:260px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:block}
+
+/* Badges de severidade */
+.sev{display:inline-block;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:700;white-space:nowrap}
+.sev-CRITICAL{background:#fde8ea;color:#b02030}
+.sev-HIGH{background:#fff0e0;color:#b05000}
+.sev-MEDIUM{background:#fffbe0;color:#907000}
+.sev-LOW{background:#e8f5e9;color:#2e7d32}
+
+/* Formulários */
+.form-card{background:var(--card);border-radius:10px;padding:24px;box-shadow:0 1px 4px rgba(0,0,0,.08);margin-bottom:20px}
+.form-card h2{font-size:16px;font-weight:700;color:var(--azul);margin-bottom:16px}
+.form-row{margin-bottom:16px}
+label{display:block;font-weight:600;margin-bottom:5px;font-size:13px;color:#444}
+textarea,input[type=text],input[type=url],select{width:100%;padding:9px 12px;border:1px solid var(--border);border-radius:6px;font-size:13px;font-family:inherit;outline:none;transition:border-color .2s}
+textarea:focus,input:focus{border-color:var(--azul2);box-shadow:0 0 0 3px rgba(0,85,165,.1)}
+textarea{min-height:110px;resize:vertical}
+.hint{font-size:11px;color:var(--cinza);margin-top:4px}
+
+/* Upload */
+.upload-area{border:2px dashed var(--border);border-radius:8px;padding:30px;text-align:center;cursor:pointer;transition:all .2s;background:#fafbfd}
+.upload-area:hover,.upload-area.drag{border-color:var(--azul2);background:#f0f6ff}
+.upload-area input{display:none}
+.upload-area .icon{font-size:36px;margin-bottom:10px}
+.upload-area p{color:var(--cinza);font-size:13px}
+.upload-area .filename{font-weight:600;color:var(--azul2);margin-top:6px}
+
+/* Botões */
+.btn{display:inline-flex;align-items:center;gap:6px;padding:10px 20px;border-radius:6px;font-size:14px;font-weight:600;cursor:pointer;border:none;transition:all .15s;text-decoration:none}
+.btn-primary{background:var(--azul2);color:#fff}.btn-primary:hover{background:#004490;text-decoration:none;color:#fff}
+.btn-success{background:var(--verde);color:#fff}.btn-success:hover{background:#1e7e34;text-decoration:none;color:#fff}
+.btn-danger{background:var(--vermelho);color:#fff}.btn-danger:hover{background:#c82333;text-decoration:none;color:#fff}
+.btn-outline{background:#fff;color:var(--azul2);border:1px solid var(--azul2)}.btn-outline:hover{background:#f0f6ff;text-decoration:none}
+.btn-sm{padding:5px 12px;font-size:12px}
+
+/* Alertas */
+.alert{padding:12px 16px;border-radius:6px;margin-bottom:16px;font-size:13px}
+.alert-error{background:#fde8ea;border-left:4px solid var(--vermelho);color:#7a1520}
+.alert-info{background:#e8f4fd;border-left:4px solid var(--azul2);color:#0a4070}
+.alert-success{background:#e8f5e9;border-left:4px solid var(--verde);color:#1a5e20}
+
+/* Progresso */
+.progress-wrap{background:#eee;border-radius:8px;height:10px;overflow:hidden;margin:8px 0}
+.progress-bar{height:100%;background:var(--azul2);border-radius:8px;transition:width .4s ease;min-width:4px}
+
+/* Log ao vivo */
+.live-log{background:#1a1a2e;color:#a0d0ff;border-radius:8px;padding:14px;font-family:'Courier New',monospace;font-size:12px;height:260px;overflow-y:auto;margin-top:12px}
+.live-log .log-ok{color:#69db7c}
+.live-log .log-err{color:#ff6b6b}
+.live-log .log-warn{color:#ffd43b}
+.live-log .log-info{color:#74c0fc}
+
+/* Separador de categoria */
+.cat-section{margin-bottom:20px}
+.cat-header{background:#eef2f7;padding:8px 14px;border-radius:6px;font-weight:700;font-size:13px;color:var(--azul);margin-bottom:4px;display:flex;justify-content:space-between;align-items:center;cursor:pointer}
+.cat-count{background:var(--azul);color:#fff;border-radius:10px;padding:1px 8px;font-size:11px}
+
+/* Status badge */
+.status-badge{display:inline-block;padding:3px 9px;border-radius:10px;font-size:11px;font-weight:600}
+.status-running{background:#fff3cd;color:#856404}
+.status-done{background:#d4edda;color:#155724}
+.status-error{background:#f8d7da;color:#721c24}
+.status-starting{background:#d1ecf1;color:#0c5460}
+
+/* Histórico sessões */
+.session-row{background:var(--card);border-radius:8px;padding:12px 16px;margin-bottom:8px;display:flex;align-items:center;gap:12px;box-shadow:0 1px 3px rgba(0,0,0,.07)}
+.session-row .url-list{font-size:12px;color:var(--cinza);flex:1}
+.divider{border:none;border-top:1px solid var(--border);margin:20px 0}

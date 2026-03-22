@@ -1,0 +1,3 @@
+url,descricao
+http://127.0.0.1:18080/ok,Pagina valida
+http://127.0.0.1:18080/sem-csrf,Sem CSRF

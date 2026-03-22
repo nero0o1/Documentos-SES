@@ -1,0 +1,252 @@
+{
+  "http_errors": {
+    "400": {
+      "name": "Bad Request",
+      "severity": "HIGH",
+      "category": "HTTP",
+      "suggestion": "Verifique os parâmetros enviados na requisição. O servidor não conseguiu interpretar a solicitação. Revise a URL, query strings e headers enviados."
+    },
+    "401": {
+      "name": "Unauthorized",
+      "severity": "HIGH",
+      "category": "AUTH",
+      "suggestion": "Autenticação necessária. Verifique se as credenciais estão corretas e se o token de acesso é válido e não expirou."
+    },
+    "403": {
+      "name": "Forbidden",
+      "severity": "HIGH",
+      "category": "AUTH",
+      "suggestion": "Acesso negado. Verifique as permissões do usuário/recurso. Pode ser necessário ajustar ACLs, roles ou configurações de CORS no servidor."
+    },
+    "404": {
+      "name": "Not Found",
+      "severity": "MEDIUM",
+      "category": "NAVIGATION",
+      "suggestion": "Recurso não encontrado. Verifique se a URL está correta, se o recurso foi movido ou excluído. Considere implementar redirecionamentos 301 para URLs antigas."
+    },
+    "405": {
+      "name": "Method Not Allowed",
+      "severity": "MEDIUM",
+      "category": "HTTP",
+      "suggestion": "Método HTTP não permitido. Verifique os métodos suportados pelo endpoint (GET, POST, PUT, DELETE) no cabeçalho 'Allow' da resposta."
+    },
+    "408": {
+      "name": "Request Timeout",
+      "severity": "MEDIUM",
+      "category": "PERFORMANCE",
+      "suggestion": "Timeout na requisição. Verifique a conexão de rede, aumente o timeout no cliente ou otimize o processamento no servidor."
+    },
+    "429": {
+      "name": "Too Many Requests",
+      "severity": "LOW",
+      "category": "RATE_LIMIT",
+      "suggestion": "Rate limit atingido. Implemente controle de taxa nas requisições, use filas ou aguarde o período de reset informado no header 'Retry-After'."
+    },
+    "500": {
+      "name": "Internal Server Error",
+      "severity": "CRITICAL",
+      "category": "SERVER",
+      "suggestion": "Erro interno do servidor. Verifique os logs do servidor, stack traces da aplicação. Pode indicar exceção não tratada, erro de banco de dados ou configuração incorreta."
+    },
+    "502": {
+      "name": "Bad Gateway",
+      "severity": "HIGH",
+      "category": "INFRASTRUCTURE",
+      "suggestion": "Gateway inválido. Verifique se o servidor upstream está funcionando, se o proxy reverso está configurado corretamente e se há problemas de conectividade entre serviços."
+    },
+    "503": {
+      "name": "Service Unavailable",
+      "severity": "CRITICAL",
+      "category": "INFRASTRUCTURE",
+      "suggestion": "Serviço indisponível. Verifique se o servidor está sobrecarregado, em manutenção ou se o balanceador de carga está funcionando. Implemente circuit breaker e retry logic."
+    },
+    "504": {
+      "name": "Gateway Timeout",
+      "severity": "HIGH",
+      "category": "PERFORMANCE",
+      "suggestion": "Timeout no gateway. Aumente o timeout no proxy/load balancer, otimize queries lentas no backend ou escale horizontalmente os serviços."
+    }
+  },
+  "html_errors": {
+    "missing_alt": {
+      "name": "Imagem sem atributo ALT",
+      "severity": "LOW",
+      "category": "ACCESSIBILITY",
+      "suggestion": "Adicione o atributo 'alt' descritivo em todas as tags <img>. Ex: <img src='foto.jpg' alt='Descrição da imagem'>. Essencial para acessibilidade e SEO."
+    },
+    "broken_link": {
+      "name": "Link quebrado",
+      "severity": "MEDIUM",
+      "category": "NAVIGATION",
+      "suggestion": "Remova ou corrija links que retornam erro 404. Implemente monitoramento periódico de links e considere usar redirecionamentos para URLs legadas."
+    },
+    "empty_form_action": {
+      "name": "Formulário sem action",
+      "severity": "MEDIUM",
+      "category": "FUNCTIONALITY",
+      "suggestion": "Adicione o atributo 'action' no formulário HTML ou garanta que o JavaScript está tratando o submit. Ex: <form action='/processar' method='POST'>."
+    },
+    "missing_title": {
+      "name": "Página sem título",
+      "severity": "LOW",
+      "category": "SEO",
+      "suggestion": "Adicione a tag <title> dentro do <head> com um título descritivo e único para cada página. Essencial para SEO e usabilidade."
+    },
+    "missing_meta_description": {
+      "name": "Meta description ausente",
+      "severity": "LOW",
+      "category": "SEO",
+      "suggestion": "Adicione <meta name='description' content='Descrição da página em 150-160 caracteres'> no <head> para melhorar o SEO."
+    },
+    "missing_viewport": {
+      "name": "Meta viewport ausente",
+      "severity": "MEDIUM",
+      "category": "MOBILE",
+      "suggestion": "Adicione <meta name='viewport' content='width=device-width, initial-scale=1.0'> para garantir responsividade em dispositivos móveis."
+    },
+    "mixed_content": {
+      "name": "Conteúdo misto HTTP/HTTPS",
+      "severity": "HIGH",
+      "category": "SECURITY",
+      "suggestion": "Substitua todas as referências HTTP por HTTPS em páginas servidas via HTTPS. Inclui scripts, imagens, CSS e iframes. Use protocolo relativo // ou forçe HTTPS."
+    },
+    "missing_lang": {
+      "name": "Atributo lang ausente no HTML",
+      "severity": "LOW",
+      "category": "ACCESSIBILITY",
+      "suggestion": "Adicione o atributo 'lang' na tag <html>. Ex: <html lang='pt-BR'>. Necessário para leitores de tela e SEO."
+    },
+    "deprecated_html": {
+      "name": "Tags HTML depreciadas",
+      "severity": "LOW",
+      "category": "CODE_QUALITY",
+      "suggestion": "Substitua tags depreciadas como <font>, <center>, <b>, <i> por CSS moderno e tags semânticas (<strong>, <em>)."
+    },
+    "large_inline_style": {
+      "name": "Excesso de estilos inline",
+      "severity": "LOW",
+      "category": "CODE_QUALITY",
+      "suggestion": "Mova estilos inline para arquivos CSS externos para melhor manutenibilidade, cache e performance."
+    },
+    "missing_csrf": {
+      "name": "Formulário sem proteção CSRF",
+      "severity": "HIGH",
+      "category": "SECURITY",
+      "suggestion": "Adicione token CSRF em formulários POST. Implemente validação server-side do token para prevenir ataques Cross-Site Request Forgery."
+    },
+    "open_redirect": {
+      "name": "Possível Open Redirect",
+      "severity": "HIGH",
+      "category": "SECURITY",
+      "suggestion": "Valide e sanitize parâmetros de redirecionamento. Use whitelist de URLs permitidas. Nunca redirecione diretamente para URLs fornecidas pelo usuário."
+    }
+  },
+  "security_headers": {
+    "missing_x_frame_options": {
+      "name": "Header X-Frame-Options ausente",
+      "severity": "MEDIUM",
+      "category": "SECURITY",
+      "suggestion": "Adicione o header 'X-Frame-Options: DENY' ou 'SAMEORIGIN' para prevenir ataques de Clickjacking."
+    },
+    "missing_csp": {
+      "name": "Content-Security-Policy ausente",
+      "severity": "HIGH",
+      "category": "SECURITY",
+      "suggestion": "Implemente Content-Security-Policy para controlar quais recursos podem ser carregados. Ex: 'Content-Security-Policy: default-src https:'."
+    },
+    "missing_hsts": {
+      "name": "HTTP Strict Transport Security ausente",
+      "severity": "HIGH",
+      "category": "SECURITY",
+      "suggestion": "Adicione 'Strict-Transport-Security: max-age=31536000; includeSubDomains' para forçar HTTPS."
+    },
+    "missing_x_content_type": {
+      "name": "X-Content-Type-Options ausente",
+      "severity": "LOW",
+      "category": "SECURITY",
+      "suggestion": "Adicione 'X-Content-Type-Options: nosniff' para prevenir MIME sniffing attacks."
+    }
+  },
+  "performance": {
+    "slow_response": {
+      "name": "Resposta lenta",
+      "severity": "MEDIUM",
+      "category": "PERFORMANCE",
+      "suggestion": "Otimize o tempo de resposta: use cache (Redis/Memcached), otimize queries SQL, implemente CDN para assets estáticos, use compressão GZIP/Brotli."
+    },
+    "large_page": {
+      "name": "Página muito grande",
+      "severity": "LOW",
+      "category": "PERFORMANCE",
+      "suggestion": "Reduza o tamanho da página: minifique HTML/CSS/JS, comprima imagens, use lazy loading, implemente paginação para listas longas."
+    },
+    "no_cache_control": {
+      "name": "Cache-Control não configurado",
+      "severity": "LOW",
+      "category": "PERFORMANCE",
+      "suggestion": "Configure headers Cache-Control adequados para recursos estáticos (max-age alto) e dinâmicos (no-cache ou max-age baixo)."
+    }
+  },
+  "xml_errors": {
+    "malformed_xml": {
+      "name": "XML malformado",
+      "severity": "HIGH",
+      "category": "XML",
+      "suggestion": "Corrija a estrutura XML: verifique tags não fechadas, atributos sem aspas, caracteres especiais não escapados (use &amp; &lt; &gt; &quot; &apos;) e aninhamento incorreto de elementos."
+    },
+    "invalid_xml_declaration": {
+      "name": "Declaração XML inválida",
+      "severity": "MEDIUM",
+      "category": "XML",
+      "suggestion": "A declaração XML deve ser a primeira linha do documento. Formato correto: <?xml version=\"1.0\" encoding=\"UTF-8\"?>. Verifique BOM (Byte Order Mark) antes da declaração."
+    },
+    "encoding_mismatch": {
+      "name": "Encoding declarado diferente do real",
+      "severity": "HIGH",
+      "category": "XML",
+      "suggestion": "O encoding declarado no XML (ex: UTF-8) deve corresponder ao encoding real do arquivo. Salve o arquivo com o encoding correto ou atualize a declaração <?xml encoding=\"...\"?>."
+    },
+    "undefined_namespace": {
+      "name": "Namespace XML não declarado",
+      "severity": "HIGH",
+      "category": "XML",
+      "suggestion": "Declare todos os namespaces usados no elemento raiz. Ex: xmlns:soap=\"http://schemas.xmlsoap.org/soap/envelope/\". Namespaces não declarados tornam o documento XML inválido."
+    },
+    "invalid_entity": {
+      "name": "Entidade XML inválida ou não declarada",
+      "severity": "HIGH",
+      "category": "XML",
+      "suggestion": "Use apenas entidades XML predefinidas (&amp; &lt; &gt; &quot; &apos;) ou declare entidades customizadas no DOCTYPE. Entidades HTML como &nbsp; não são válidas em XML puro."
+    },
+    "invalid_xhtml": {
+      "name": "XHTML inválido (não é XML bem formado)",
+      "severity": "MEDIUM",
+      "category": "XML",
+      "suggestion": "Páginas servidas como XHTML (Content-Type: application/xhtml+xml) devem ser XML bem formados: feche todas as tags, use minúsculas, ponha atributos entre aspas e declare namespace XHTML."
+    },
+    "duplicate_attribute": {
+      "name": "Atributo duplicado no elemento XML",
+      "severity": "MEDIUM",
+      "category": "XML",
+      "suggestion": "Remova atributos duplicados. Em XML, cada atributo de um elemento deve ser único. Ex: <tag id=\"a\" id=\"b\"> é inválido."
+    },
+    "xml_import_parse_error": {
+      "name": "Erro ao parsear XML importado",
+      "severity": "HIGH",
+      "category": "XML_IMPORT",
+      "suggestion": "O arquivo XML importado não pôde ser lido. Verifique: (1) o arquivo é XML válido e bem formado, (2) o encoding está correto (UTF-8 recomendado), (3) não há caracteres de controle no conteúdo."
+    },
+    "xml_import_no_urls": {
+      "name": "XML importado sem URLs válidas",
+      "severity": "MEDIUM",
+      "category": "XML_IMPORT",
+      "suggestion": "O XML de targets deve conter elementos <url> com endereços http:// ou https://. Estrutura esperada: <urls><url>https://exemplo.com</url></urls>."
+    },
+    "xml_import_invalid_structure": {
+      "name": "Estrutura do XML de importação inválida",
+      "severity": "MEDIUM",
+      "category": "XML_IMPORT",
+      "suggestion": "Use a estrutura padrão: <urls><url>https://site.com</url></urls> ou <targets><target url=\"https://site.com\"/></targets>. O elemento raiz pode ser <urls>, <targets> ou <sites>."
+    }
+  }
+}
