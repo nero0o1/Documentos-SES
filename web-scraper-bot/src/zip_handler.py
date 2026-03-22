@@ -8,6 +8,7 @@ import csv
 import io
 import json
 import os
+import xml.etree.ElementTree as ET
 import zipfile
 from datetime import datetime, timezone
 from pathlib import Path
@@ -559,6 +560,8 @@ class ZipImporter:
           - targets.json  (lista de URLs ou objetos com 'url')
           - targets.txt   (uma URL por linha)
           - targets.csv   (coluna 'url')
+          - targets.xml   (<urls><url>https://...</url></urls> ou
+                           <targets><target url="https://..."/></targets>)
         """
         zip_path = Path(zip_path)
         if not zip_path.exists():
@@ -612,6 +615,12 @@ class ZipImporter:
                             if url.startswith(("http://", "https://")):
                                 urls.append(url)
 
+                # targets.xml
+                xml_files = [n for n in names if n.endswith(".xml") and "target" in n.lower()]
+                for xf in xml_files:
+                    xml_urls = self._parse_targets_xml(zf.read(xf))
+                    urls.extend(xml_urls)
+
         except zipfile.BadZipFile:
             self.logger.error(f"Arquivo ZIP inválido: {zip_path}")
         except Exception as e:
@@ -627,6 +636,44 @@ class ZipImporter:
 
         self.logger.info(f"Importadas {len(unique_urls)} URLs únicas do ZIP.")
         return unique_urls
+
+    def _parse_targets_xml(self, raw: bytes) -> List[str]:
+        """
+        Parseia XML de targets. Aceita os formatos:
+          <urls><url>https://...</url></urls>
+          <targets><target url="https://..."/></targets>
+          <sites><site href="https://..."/></sites>
+          <targets><target><url>https://...</url></target></targets>
+        Retorna [] se XML for inválido ou não contiver URLs válidas,
+        registrando o erro no log (nunca lança exceção).
+        """
+        urls = []
+        try:
+            root = ET.fromstring(raw)
+        except ET.ParseError as e:
+            self.logger.error(f"XML de targets malformado: {e}")
+            return []
+        except Exception as e:
+            self.logger.error(f"Erro ao parsear XML de targets: {e}")
+            return []
+
+        # Coleta texto de elementos filhos e atributos url/href
+        for elem in root.iter():
+            # Texto direto do elemento (ex: <url>https://...</url>)
+            text = (elem.text or "").strip()
+            if text.startswith(("http://", "https://")):
+                urls.append(text)
+            # Atributos url, href, src
+            for attr in ("url", "href", "src", "link"):
+                val = elem.get(attr, "").strip()
+                if val.startswith(("http://", "https://")):
+                    urls.append(val)
+
+        if not urls:
+            self.logger.warning("XML de targets não contém URLs válidas (http/https).")
+        else:
+            self.logger.info(f"Importadas {len(urls)} URLs do XML de targets.")
+        return urls
 
     def import_config_from_zip(self, zip_path: str) -> Optional[Dict]:
         """

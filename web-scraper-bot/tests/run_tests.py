@@ -172,7 +172,7 @@ def save_json_report(all_results: list, output_path: Path):
 def main():
     parser = argparse.ArgumentParser(description="Runner de Testes WebAuditBot SES")
     parser.add_argument(
-        "--suite", choices=["interface", "import", "all"], default="all",
+        "--suite", choices=["interface", "import", "xml", "all"], default="all",
         help="Suite a executar (padrão: all)"
     )
     parser.add_argument("--verbose", "-v", action="store_true",
@@ -196,6 +196,10 @@ def main():
     if args.suite in ("import", "all"):
         suites_to_run.append(
             ("Rejeição de Importação de Arquivos", "test_import_rejection")
+        )
+    if args.suite in ("xml", "all"):
+        suites_to_run.append(
+            ("Validação de Erros XML", "test_xml_validation")
         )
 
     all_results = []

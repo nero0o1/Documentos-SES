@@ -224,6 +224,104 @@ PAGES = {
 <input type=text name=campo
 </div></html""",
     },
+
+    # ── Rotas XML ─────────────────────────────────────────────────────────────
+
+    "/xml-valido": {
+        "status": 200,
+        "content_type": "application/xml; charset=utf-8",
+        "headers": {},
+        "body": """<?xml version="1.0" encoding="UTF-8"?>
+<catalogo xmlns="http://ses.gov.br/catalogo">
+  <item id="1">
+    <nome>Produto A</nome>
+    <preco moeda="BRL">29.90</preco>
+  </item>
+  <item id="2">
+    <nome>Produto B</nome>
+    <preco moeda="BRL">49.90</preco>
+  </item>
+</catalogo>""",
+    },
+
+    "/xml-tag-nao-fechada": {
+        "status": 200,
+        "content_type": "application/xml; charset=utf-8",
+        "headers": {},
+        "body": """<?xml version="1.0" encoding="UTF-8"?>
+<relatorio>
+  <item>
+    <nome>Registro 1</nome>
+    <valor>100
+  </item>
+  <item>
+    <nome>Registro 2
+  </item>
+</relatorio>""",
+    },
+
+    "/xml-entidade-invalida": {
+        "status": 200,
+        "content_type": "application/xml; charset=utf-8",
+        "headers": {},
+        "body": """<?xml version="1.0" encoding="UTF-8"?>
+<pagina>
+  <descricao>Produto com preco em R&amp; e simbolo &copy; e espaco&nbsp;aqui</descricao>
+  <titulo>Titulo &mdash; com travessao</titulo>
+</pagina>""",
+    },
+
+    "/xml-declaracao-invalida": {
+        "status": 200,
+        "content_type": "application/xml; charset=utf-8",
+        "headers": {},
+        "body": """<?xml versao="1.0" encode="latin"?>
+<dados>
+  <campo>valor</campo>
+</dados>""",
+    },
+
+    "/xml-namespace-nao-declarado": {
+        "status": 200,
+        "content_type": "application/xml; charset=utf-8",
+        "headers": {},
+        "body": """<?xml version="1.0" encoding="UTF-8"?>
+<soap:Envelope>
+  <soap:Body>
+    <ns2:resposta>
+      <ns2:codigo>200</ns2:codigo>
+    </ns2:resposta>
+  </soap:Body>
+</soap:Envelope>""",
+    },
+
+    "/xhtml-invalido": {
+        "status": 200,
+        "content_type": "application/xhtml+xml; charset=utf-8",
+        "headers": {},
+        "body": """<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="pt-BR">
+<head><title>XHTML Invalido</title></head>
+<body>
+  <br>
+  <img src="foto.jpg">
+  <p>Paragrafo sem fechar
+</body>""",
+    },
+
+    "/xml-atributo-duplicado": {
+        "status": 200,
+        "content_type": "application/xml; charset=utf-8",
+        "headers": {},
+        "body": """<?xml version="1.0" encoding="UTF-8"?>
+<produtos>
+  <item id="1" nome="A" id="2">
+    <descricao>Produto com id duplicado</descricao>
+  </item>
+</produtos>""",
+    },
 }
 
 # Contador para instabilidade alternada
@@ -327,5 +425,12 @@ def _route_description(route: str) -> str:
         "/instavel": "Alterna entre 200 e 503",
         "/vazio": "Body vazio",
         "/html-corrompido": "HTML malformado",
+        "/xml-valido": "XML válido e bem formado",
+        "/xml-tag-nao-fechada": "XML com tag não fechada",
+        "/xml-entidade-invalida": "XML com entidades HTML inválidas (&copy; &nbsp; &mdash;)",
+        "/xml-declaracao-invalida": "XML com declaração <?xml> inválida",
+        "/xml-namespace-nao-declarado": "XML com namespaces (soap:, ns2:) não declarados",
+        "/xhtml-invalido": "XHTML servido como application/xhtml+xml mas inválido",
+        "/xml-atributo-duplicado": "XML com atributo id duplicado na mesma tag",
     }
     return descriptions.get(route, route)

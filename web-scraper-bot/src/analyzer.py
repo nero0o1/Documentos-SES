@@ -5,6 +5,7 @@ Analisa o HTML coletado, detecta problemas e gera sugestões de correção.
 
 import re
 import time
+import xml.etree.ElementTree as ET
 from typing import Dict, List, Optional, Tuple, Any
 from urllib.parse import urljoin, urlparse
 from bs4 import BeautifulSoup, Tag
@@ -126,6 +127,11 @@ class HTMLAnalyzer:
         # Verifica tags depreciadas
         depr_errors = self._check_deprecated_tags(result)
         errors.extend(depr_errors)
+
+        # Verifica XML/XHTML
+        if self.config.get("check_xml", True):
+            xml_errors = self._check_xml(result)
+            errors.extend(xml_errors)
 
         return errors
 
@@ -454,6 +460,180 @@ class HTMLAnalyzer:
                 extra={"deprecated_tags": found_deprecated}
             ))
         return errors
+
+    # ── Categorias de Content-Type que indicam XML ────────────────────────────
+    _XML_CONTENT_TYPES = (
+        "application/xml", "text/xml", "application/xhtml+xml",
+        "application/atom+xml", "application/rss+xml", "application/soap+xml",
+        "application/rdf+xml",
+    )
+    # Entidades HTML comuns que são inválidas em XML puro
+    _INVALID_XML_ENTITIES = re.compile(
+        r"&(nbsp|mdash|ndash|ldquo|rdquo|lsquo|rsquo|hellip|bull|copy|reg|trade"
+        r"|euro|pound|yen|cent|amp(?!;)|lt(?!;)|gt(?!;)|quot(?!;)|apos(?!;)"
+        r"|[a-zA-Z][a-zA-Z0-9]{1,10})(?!;)",
+    )
+
+    def _check_xml(self, result: "PageResult") -> List[AnalysisError]:
+        """
+        Detecta erros em documentos XML, XHTML e RSS/Atom.
+        Também valida XHTML servido como text/html quando declara DOCTYPE XHTML.
+        """
+        errors: List[AnalysisError] = []
+        rules = self.error_rules.get("xml_errors", {})
+        content_type = result.headers.get(
+            "content-type", result.headers.get("Content-Type", "")
+        ).lower()
+        body = result.html or ""
+
+        is_xml_ct  = any(ct in content_type for ct in self._XML_CONTENT_TYPES)
+        is_xhtml_ct = "xhtml" in content_type
+        has_xml_decl = body.lstrip().startswith("<?xml")
+        is_xhtml_doctype = bool(re.search(r"<!DOCTYPE\s+html\s+PUBLIC\s+[^>]*XHTML", body, re.I))
+
+        should_be_xml = is_xml_ct or has_xml_decl
+
+        # ── 1. Valida como XML usando o parser estrito ────────────────────────
+        if should_be_xml or is_xhtml_ct or is_xhtml_doctype:
+            xml_error = self._parse_xml_strict(body, result.url)
+            if xml_error:
+                rule = rules.get("malformed_xml", {})
+                # Sobrescreve severidade se for XHTML servido como text/html (menos crítico)
+                sev = "MEDIUM" if (is_xhtml_doctype and not is_xhtml_ct) else rule.get("severity", "HIGH")
+                errors.append(AnalysisError(
+                    url=result.url,
+                    error_type="MALFORMED_XML",
+                    error_code="XML_001",
+                    description=f"Documento XML/XHTML malformado: {xml_error}",
+                    suggestion=rule.get("suggestion", "Corrija a estrutura XML do documento."),
+                    severity=sev,
+                    category="XML",
+                    page_title=result.page_title,
+                    extra={"parse_error": xml_error, "content_type": content_type}
+                ))
+
+        # ── 2. Declaração XML inválida ────────────────────────────────────────
+        if has_xml_decl:
+            decl_err = self._check_xml_declaration(body)
+            if decl_err:
+                rule = rules.get("invalid_xml_declaration", {})
+                errors.append(AnalysisError(
+                    url=result.url,
+                    error_type="INVALID_XML_DECLARATION",
+                    error_code="XML_002",
+                    description=f"Declaração XML inválida: {decl_err}",
+                    suggestion=rule.get("suggestion", "Corrija a declaração <?xml ...?>."),
+                    severity=rule.get("severity", "MEDIUM"),
+                    category="XML",
+                    page_title=result.page_title
+                ))
+
+        # ── 3. Entidades HTML inválidas em XML ────────────────────────────────
+        if should_be_xml:
+            invalid_ents = self._INVALID_XML_ENTITIES.findall(body)
+            if invalid_ents:
+                unique_ents = list(dict.fromkeys(invalid_ents))[:10]
+                rule = rules.get("invalid_entity", {})
+                errors.append(AnalysisError(
+                    url=result.url,
+                    error_type="INVALID_XML_ENTITY",
+                    error_code="XML_003",
+                    description=f"Entidade(s) inválida(s) em XML: &{'; &'.join(unique_ents)};",
+                    suggestion=rule.get("suggestion", "Use apenas entidades XML predefinidas ou declare no DOCTYPE."),
+                    severity=rule.get("severity", "HIGH"),
+                    category="XML",
+                    page_title=result.page_title,
+                    extra={"invalid_entities": unique_ents}
+                ))
+
+        # ── 4. Namespace não declarado ────────────────────────────────────────
+        if should_be_xml:
+            ns_err = self._check_undeclared_namespaces(body)
+            if ns_err:
+                rule = rules.get("undefined_namespace", {})
+                errors.append(AnalysisError(
+                    url=result.url,
+                    error_type="UNDEFINED_XML_NAMESPACE",
+                    error_code="XML_004",
+                    description=f"Namespace(s) não declarado(s): {', '.join(ns_err[:5])}",
+                    suggestion=rule.get("suggestion", "Declare todos os namespaces usados no elemento raiz."),
+                    severity=rule.get("severity", "HIGH"),
+                    category="XML",
+                    page_title=result.page_title,
+                    extra={"namespaces": ns_err}
+                ))
+
+        # ── 5. Atributos duplicados (regex rápida, antes do parse estrito) ────
+        if should_be_xml or is_xhtml_doctype:
+            dup = self._check_duplicate_attributes(body)
+            if dup:
+                rule = rules.get("duplicate_attribute", {})
+                errors.append(AnalysisError(
+                    url=result.url,
+                    error_type="DUPLICATE_XML_ATTRIBUTE",
+                    error_code="XML_005",
+                    description=f"Atributo(s) duplicado(s) detectado(s): {', '.join(dup[:5])}",
+                    suggestion=rule.get("suggestion", "Remova atributos duplicados dos elementos XML."),
+                    severity=rule.get("severity", "MEDIUM"),
+                    category="XML",
+                    page_title=result.page_title,
+                    extra={"duplicates": dup}
+                ))
+
+        return errors
+
+    def _parse_xml_strict(self, body: str, url: str) -> Optional[str]:
+        """Tenta parsear como XML com o parser estrito. Retorna mensagem de erro ou None."""
+        if not body or not body.strip():
+            return None
+        try:
+            ET.fromstring(body.encode("utf-8") if isinstance(body, str) else body)
+            return None
+        except ET.ParseError as e:
+            return str(e)
+        except Exception as e:
+            return str(e)
+
+    def _check_xml_declaration(self, body: str) -> Optional[str]:
+        """Valida a declaração <?xml ...?> se presente."""
+        match = re.match(r"^\s*<\?xml([^?]*)\?>", body.strip(), re.I)
+        if not match:
+            return None
+        attrs = match.group(1)
+        # version é obrigatório
+        if not re.search(r'version\s*=\s*["\']1\.[0-9]["\']', attrs):
+            return "Atributo 'version' ausente ou inválido na declaração XML"
+        # encoding deve ser nome de charset válido se presente
+        enc_match = re.search(r'encoding\s*=\s*["\']([^"\']+)["\']', attrs, re.I)
+        if enc_match:
+            enc = enc_match.group(1).upper()
+            known = {"UTF-8", "UTF-16", "ISO-8859-1", "US-ASCII", "WINDOWS-1252",
+                     "ISO-8859-15", "UTF-32"}
+            if enc not in known and not re.match(r"^[A-Z0-9][A-Z0-9._\-]+$", enc):
+                return f"Encoding '{enc}' com formato inválido na declaração XML"
+        return None
+
+    def _check_undeclared_namespaces(self, body: str) -> List[str]:
+        """Detecta prefixos de namespace usados mas não declarados."""
+        used     = set(re.findall(r"<([a-zA-Z][a-zA-Z0-9_]*):[\w]", body))
+        declared = set(re.findall(r"xmlns:([a-zA-Z][a-zA-Z0-9_]*)\s*=", body))
+        # Prefixos comuns que raramente precisam ser declarados
+        builtin = {"xml", "xmlns"}
+        undeclared = [p for p in (used - declared - builtin)]
+        return sorted(undeclared)
+
+    def _check_duplicate_attributes(self, body: str) -> List[str]:
+        """Detecta atributos duplicados dentro de uma mesma tag XML (heurística rápida)."""
+        duplicates = []
+        for tag_match in re.finditer(r"<[^>]{10,}>", body):
+            tag_str = tag_match.group(0)
+            attr_names = re.findall(r"\s([a-zA-Z][a-zA-Z0-9_:\-]*)=", tag_str)
+            seen = set()
+            for attr in attr_names:
+                if attr in seen:
+                    duplicates.append(attr)
+                seen.add(attr)
+        return list(dict.fromkeys(duplicates))  # sem duplicatas na lista de duplicatas
 
     def analyze_broken_link(
         self, source_url: str, link_url: str, status_code: int, page_title: Optional[str] = None

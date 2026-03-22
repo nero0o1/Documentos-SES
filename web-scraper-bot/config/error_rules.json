@@ -186,5 +186,67 @@
       "category": "PERFORMANCE",
       "suggestion": "Configure headers Cache-Control adequados para recursos estáticos (max-age alto) e dinâmicos (no-cache ou max-age baixo)."
     }
+  },
+  "xml_errors": {
+    "malformed_xml": {
+      "name": "XML malformado",
+      "severity": "HIGH",
+      "category": "XML",
+      "suggestion": "Corrija a estrutura XML: verifique tags não fechadas, atributos sem aspas, caracteres especiais não escapados (use &amp; &lt; &gt; &quot; &apos;) e aninhamento incorreto de elementos."
+    },
+    "invalid_xml_declaration": {
+      "name": "Declaração XML inválida",
+      "severity": "MEDIUM",
+      "category": "XML",
+      "suggestion": "A declaração XML deve ser a primeira linha do documento. Formato correto: <?xml version=\"1.0\" encoding=\"UTF-8\"?>. Verifique BOM (Byte Order Mark) antes da declaração."
+    },
+    "encoding_mismatch": {
+      "name": "Encoding declarado diferente do real",
+      "severity": "HIGH",
+      "category": "XML",
+      "suggestion": "O encoding declarado no XML (ex: UTF-8) deve corresponder ao encoding real do arquivo. Salve o arquivo com o encoding correto ou atualize a declaração <?xml encoding=\"...\"?>."
+    },
+    "undefined_namespace": {
+      "name": "Namespace XML não declarado",
+      "severity": "HIGH",
+      "category": "XML",
+      "suggestion": "Declare todos os namespaces usados no elemento raiz. Ex: xmlns:soap=\"http://schemas.xmlsoap.org/soap/envelope/\". Namespaces não declarados tornam o documento XML inválido."
+    },
+    "invalid_entity": {
+      "name": "Entidade XML inválida ou não declarada",
+      "severity": "HIGH",
+      "category": "XML",
+      "suggestion": "Use apenas entidades XML predefinidas (&amp; &lt; &gt; &quot; &apos;) ou declare entidades customizadas no DOCTYPE. Entidades HTML como &nbsp; não são válidas em XML puro."
+    },
+    "invalid_xhtml": {
+      "name": "XHTML inválido (não é XML bem formado)",
+      "severity": "MEDIUM",
+      "category": "XML",
+      "suggestion": "Páginas servidas como XHTML (Content-Type: application/xhtml+xml) devem ser XML bem formados: feche todas as tags, use minúsculas, ponha atributos entre aspas e declare namespace XHTML."
+    },
+    "duplicate_attribute": {
+      "name": "Atributo duplicado no elemento XML",
+      "severity": "MEDIUM",
+      "category": "XML",
+      "suggestion": "Remova atributos duplicados. Em XML, cada atributo de um elemento deve ser único. Ex: <tag id=\"a\" id=\"b\"> é inválido."
+    },
+    "xml_import_parse_error": {
+      "name": "Erro ao parsear XML importado",
+      "severity": "HIGH",
+      "category": "XML_IMPORT",
+      "suggestion": "O arquivo XML importado não pôde ser lido. Verifique: (1) o arquivo é XML válido e bem formado, (2) o encoding está correto (UTF-8 recomendado), (3) não há caracteres de controle no conteúdo."
+    },
+    "xml_import_no_urls": {
+      "name": "XML importado sem URLs válidas",
+      "severity": "MEDIUM",
+      "category": "XML_IMPORT",
+      "suggestion": "O XML de targets deve conter elementos <url> com endereços http:// ou https://. Estrutura esperada: <urls><url>https://exemplo.com</url></urls>."
+    },
+    "xml_import_invalid_structure": {
+      "name": "Estrutura do XML de importação inválida",
+      "severity": "MEDIUM",
+      "category": "XML_IMPORT",
+      "suggestion": "Use a estrutura padrão: <urls><url>https://site.com</url></urls> ou <targets><target url=\"https://site.com\"/></targets>. O elemento raiz pode ser <urls>, <targets> ou <sites>."
+    }
   }
 }
